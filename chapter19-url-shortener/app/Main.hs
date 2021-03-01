@@ -83,8 +83,13 @@ app rConn = do
         shawty <- liftIO shortyGen
         let shorty = BC.pack shawty
             uri' = encodeUtf8 (TL.toStrict uri)
-        resp <- liftIO (saveURI rConn shorty uri')
-        html (shortyCreated resp shawty)
+        -- check if this ID was already used
+        isExists <- liftIO $ getURI rConn shorty
+        case isExists of
+          Left _ -> do
+            resp <- liftIO (saveURI rConn shorty uri')
+            html (shortyCreated resp shawty)
+          Right _ -> text $ TL.pack $ concat ["short URL with '", shawty, " ' ID was already made"]
       Nothing -> text (shortyAintUri uri)
 
   get "/:short" $ do
